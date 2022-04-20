@@ -17,6 +17,7 @@ type ContractCreateTransaction struct {
 	autoRenewPeriod *time.Duration
 	parameters      []byte
 	memo            string
+	initcode        []byte
 }
 
 func NewContractCreateTransaction() *ContractCreateTransaction {
@@ -52,6 +53,8 @@ func (transaction *ContractCreateTransaction) SetGrpcDeadline(deadline *time.Dur
 	return transaction
 }
 
+// SetBytecodeFileID
+// If the initcode is large (> 5K) then it must be stored in a file as hex encoded ascii.
 func (transaction *ContractCreateTransaction) SetBytecodeFileID(byteCodeFileID FileID) *ContractCreateTransaction {
 	transaction._RequireNotFrozen()
 	transaction.byteCodeFileID = &byteCodeFileID
@@ -64,6 +67,18 @@ func (transaction *ContractCreateTransaction) GetBytecodeFileID() FileID {
 	}
 
 	return *transaction.byteCodeFileID
+}
+
+// SetInitcode
+//If it is small then it may either be stored as a hex encoded file or as a binary encoded field as part of the transaciton.
+func (transaction *ContractCreateTransaction) SetInitcode(code []byte) *ContractCreateTransaction {
+	transaction._RequireNotFrozen()
+	transaction.initcode = code
+	return transaction
+}
+
+func (transaction *ContractCreateTransaction) GetInitcode() []byte {
+	return transaction.initcode
 }
 
 /**
@@ -210,7 +225,9 @@ func (transaction *ContractCreateTransaction) _Build() *services.TransactionBody
 	}
 
 	if transaction.byteCodeFileID != nil {
-		body.FileID = transaction.byteCodeFileID._ToProtobuf()
+		body.InitcodeSource = &services.ContractCreateTransactionBody_FileID{FileID: transaction.byteCodeFileID._ToProtobuf()}
+	} else if len(transaction.initcode) != 0 {
+		body.InitcodeSource = &services.ContractCreateTransactionBody_Initcode{Initcode: transaction.initcode}
 	}
 
 	if transaction.proxyAccountID != nil {
@@ -258,7 +275,9 @@ func (transaction *ContractCreateTransaction) _ConstructScheduleProtobuf() (*ser
 	}
 
 	if transaction.byteCodeFileID != nil {
-		body.FileID = transaction.byteCodeFileID._ToProtobuf()
+		body.InitcodeSource = &services.ContractCreateTransactionBody_FileID{FileID: transaction.byteCodeFileID._ToProtobuf()}
+	} else if len(transaction.initcode) != 0 {
+		body.InitcodeSource = &services.ContractCreateTransactionBody_Initcode{Initcode: transaction.initcode}
 	}
 
 	if transaction.proxyAccountID != nil {
