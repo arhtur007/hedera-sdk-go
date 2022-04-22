@@ -13,6 +13,7 @@ type ContractDeleteTransaction struct {
 	contractID        *ContractID
 	transferContactID *ContractID
 	transferAccountID *AccountID
+	permanentRemoval  bool
 }
 
 func NewContractDeleteTransaction() *ContractDeleteTransaction {
@@ -84,6 +85,17 @@ func (transaction *ContractDeleteTransaction) GetTransferAccountID() AccountID {
 	return *transaction.transferAccountID
 }
 
+func (transaction *ContractDeleteTransaction) SetPermanentRemoval(remove bool) *ContractDeleteTransaction {
+	transaction._RequireNotFrozen()
+	transaction.permanentRemoval = remove
+
+	return transaction
+}
+
+func (transaction *ContractDeleteTransaction) GetPermanentRemoval() bool {
+	return transaction.permanentRemoval
+}
+
 func (transaction *ContractDeleteTransaction) _ValidateNetworkOnIDs(client *Client) error {
 	if client == nil || !client.autoValidateChecksums {
 		return nil
@@ -111,7 +123,9 @@ func (transaction *ContractDeleteTransaction) _ValidateNetworkOnIDs(client *Clie
 }
 
 func (transaction *ContractDeleteTransaction) _Build() *services.TransactionBody {
-	body := &services.ContractDeleteTransactionBody{}
+	body := &services.ContractDeleteTransactionBody{
+		PermanentRemoval: transaction.permanentRemoval,
+	}
 
 	if transaction.contractID != nil {
 		body.ContractID = transaction.contractID._ToProtobuf()
@@ -154,7 +168,9 @@ func (transaction *ContractDeleteTransaction) Schedule() (*ScheduleCreateTransac
 }
 
 func (transaction *ContractDeleteTransaction) _ConstructScheduleProtobuf() (*services.SchedulableTransactionBody, error) {
-	body := &services.ContractDeleteTransactionBody{}
+	body := &services.ContractDeleteTransactionBody{
+		PermanentRemoval: transaction.permanentRemoval,
+	}
 
 	if transaction.contractID != nil {
 		body.ContractID = transaction.contractID._ToProtobuf()
