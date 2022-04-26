@@ -6,17 +6,31 @@ import (
 	"github.com/hashgraph/hedera-protobufs-go/services"
 )
 
-type AccountCreateOption func() (func(*AccountCreateTransaction), error)
+type TransferOption func(*TransferTransaction)
 
-func WithMemo(s string) AccountCreateOption {
-	return func() (func(a *AccountCreateTransaction), error) {
-		return func(a *AccountCreateTransaction) {
-			a.memo = s
-		}, nil
+func TransferWithMaxTransactionFee(f float64) TransferOption {
+	return func(a *TransferTransaction) {
+		a._RequireNotFrozen()
+		a.Transaction.SetMaxTransactionFee(NewHbar(f))
 	}
 }
 
-func WithInitBalance(u uint64) AccountCreateOption {
+func TransferWithValidDuration(duration time.Duration) TransferOption {
+	return func(a *TransferTransaction) {
+		a._RequireNotFrozen()
+		a.Transaction.SetTransactionValidDuration(duration)
+	}
+}
+
+func TransferWithMemo(s string) TransferOption {
+	return func(a *TransferTransaction) {
+		a.memo = s
+	}
+}
+
+type AccountCreateOption func() (func(*AccountCreateTransaction), error)
+
+func AccountCreateWithInitBalance(u uint64) AccountCreateOption {
 	return func() (func(a *AccountCreateTransaction), error) {
 		return func(a *AccountCreateTransaction) {
 			a._RequireNotFrozen()
@@ -25,7 +39,33 @@ func WithInitBalance(u uint64) AccountCreateOption {
 	}
 }
 
-func WithReceiveerSigRequired() AccountCreateOption {
+func AccountCreateWithMaxTransactionFee(f float64) AccountCreateOption {
+	return func() (func(a *AccountCreateTransaction), error) {
+		return func(a *AccountCreateTransaction) {
+			a._RequireNotFrozen()
+			a.Transaction.SetMaxTransactionFee(NewHbar(f))
+		}, nil
+	}
+}
+
+func AccountCreateWithValidDuration(duration time.Duration) AccountCreateOption {
+	return func() (func(a *AccountCreateTransaction), error) {
+		return func(a *AccountCreateTransaction) {
+			a._RequireNotFrozen()
+			a.Transaction.SetTransactionValidDuration(duration)
+		}, nil
+	}
+}
+
+func AccountCreateWithMemo(s string) AccountCreateOption {
+	return func() (func(a *AccountCreateTransaction), error) {
+		return func(a *AccountCreateTransaction) {
+			a.memo = s
+		}, nil
+	}
+}
+
+func AccountCreateWithReceiverSigRequired() AccountCreateOption {
 	return func() (func(a *AccountCreateTransaction), error) {
 		return func(a *AccountCreateTransaction) {
 			a.receiverSignatureRequired = true
@@ -33,7 +73,7 @@ func WithReceiveerSigRequired() AccountCreateOption {
 	}
 }
 
-func WithProxyAccountIDStr(s string) AccountCreateOption {
+func AccountCreateWithProxyAccountIDStr(s string) AccountCreateOption {
 	return func() (func(a *AccountCreateTransaction), error) {
 		if accountID, err := AccountIDFromString(s); err != nil {
 			return nil, err
@@ -45,7 +85,7 @@ func WithProxyAccountIDStr(s string) AccountCreateOption {
 	}
 }
 
-func WithMaxAutoTokenAssociations(u uint32) AccountCreateOption {
+func AccountCreateWithMaxAutoTokenAssociations(u uint32) AccountCreateOption {
 	return func() (func(a *AccountCreateTransaction), error) {
 		return func(a *AccountCreateTransaction) {
 			a._RequireNotFrozen()
@@ -54,33 +94,13 @@ func WithMaxAutoTokenAssociations(u uint32) AccountCreateOption {
 	}
 }
 
-func WithAutoRenewPeriod(t time.Duration) AccountCreateOption {
+func AccountCreateWithAutoRenewPeriod(duration time.Duration) AccountCreateOption {
 	return func() (func(a *AccountCreateTransaction), error) {
 		return func(a *AccountCreateTransaction) {
 			a._RequireNotFrozen()
-			a.autoRenewPeriod = &t
+			a.autoRenewPeriod = &duration
 		}, nil
 	}
-}
-
-type TransferOption func() (func(*TransferTransaction), error)
-
-func BuildAccountCreateTransactionBody(keyByte []byte, opts ...AccountCreateOption) (*services.TransactionBody, error) {
-	key, err := PublicKeyFromBytesEd25519(keyByte)
-	if err != nil {
-		return &services.TransactionBody{}, err
-	}
-	tx := NewAccountCreateTransaction().SetKey(key)
-
-	for _, opt := range opts {
-		f, err2 := opt()
-		if err2 != nil {
-			return &services.TransactionBody{}, err2
-		}
-		f(tx)
-	}
-
-	return tx._Build(), nil
 }
 
 func BuildTransferHbarTransactionBody(
@@ -101,6 +121,20 @@ func BuildTransferHbarTransactionBody(
 	tx := NewTransferTransaction().
 		AddHbarTransfer(SenderActID, NewHbar(amount*-1)).
 		AddHbarTransfer(ReceiverActID, NewHbar(amount))
+
+	for _, opt := range opts {
+		opt(tx)
+	}
+
+	return tx._Build(), nil
+}
+
+func BuildAccountCreateTransactionBody(keyByte []byte, opts ...AccountCreateOption) (*services.TransactionBody, error) {
+	key, err := PublicKeyFromBytesEd25519(keyByte)
+	if err != nil {
+		return &services.TransactionBody{}, err
+	}
+	tx := NewAccountCreateTransaction().SetKey(key)
 
 	for _, opt := range opts {
 		f, err2 := opt()
