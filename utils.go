@@ -104,32 +104,48 @@ func AccountCreateWithAutoRenewPeriod(duration time.Duration) AccountCreateOptio
 }
 
 func BuildTransferHbarTransactionBody(
-	SenderActIDStr,
-	ReceiverActIDStr string,
+	network, actIDStr, receiverActIDStr string,
 	amount float64,
 	opts ...TransferOption) (*services.TransactionBody, error) {
-	SenderActID, err := AccountIDFromString(SenderActIDStr)
+	actID, err := AccountIDFromString(actIDStr)
 	if err != nil {
 		return &services.TransactionBody{}, err
 	}
 
-	ReceiverActID, err2 := AccountIDFromString(ReceiverActIDStr)
+	receiverActID, err2 := AccountIDFromString(receiverActIDStr)
 	if err2 != nil {
 		return &services.TransactionBody{}, err2
 	}
 
 	tx := NewTransferTransaction().
-		AddHbarTransfer(SenderActID, NewHbar(amount*-1)).
-		AddHbarTransfer(ReceiverActID, NewHbar(amount))
+		AddHbarTransfer(actID, NewHbar(amount*-1)).
+		AddHbarTransfer(receiverActID, NewHbar(amount))
 
 	for _, opt := range opts {
 		opt(tx)
 	}
 
+	client, err3 := ClientForName(network)
+	if err3 != nil {
+		return &services.TransactionBody{}, err3
+	}
+
+	client.operator.accountID = actID
+
+	tx._InitFee(client)
+
+	if err = tx._InitTransactionID(client); err != nil {
+		return &services.TransactionBody{}, err
+	}
+
+	if err = tx._ValidateNetworkOnIDs(client); err != nil {
+		return &services.TransactionBody{}, err
+	}
+
 	return tx._Build(), nil
 }
 
-func BuildAccountCreateTransactionBody(keyByte []byte, opts ...AccountCreateOption) (*services.TransactionBody, error) {
+func BuildAccountCreateTransactionBody(network, actIDStr string, keyByte []byte, opts ...AccountCreateOption) (*services.TransactionBody, error) {
 	key, err := PublicKeyFromBytesEd25519(keyByte)
 	if err != nil {
 		return &services.TransactionBody{}, err
@@ -142,6 +158,29 @@ func BuildAccountCreateTransactionBody(keyByte []byte, opts ...AccountCreateOpti
 			return &services.TransactionBody{}, err2
 		}
 		f(tx)
+	}
+
+	actID, err3 := AccountIDFromString(actIDStr)
+	if err != nil {
+		return &services.TransactionBody{}, err3
+	}
+
+	client, err4 := ClientForName(network)
+	if err4 != nil {
+		return &services.TransactionBody{}, err4
+	}
+
+	client.operator.accountID = actID
+	client.operator.publicKey = key
+
+	tx._InitFee(client)
+
+	if err = tx._InitTransactionID(client); err != nil {
+		return &services.TransactionBody{}, err
+	}
+
+	if err = tx._ValidateNetworkOnIDs(client); err != nil {
+		return &services.TransactionBody{}, err
 	}
 
 	return tx._Build(), nil
