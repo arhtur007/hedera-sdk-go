@@ -199,6 +199,27 @@ func (id AccountID) _ToProtobuf() *services.AccountID {
 	return resultID
 }
 
+func (id AccountID) ToProtobuf() *services.AccountID {
+	resultID := &services.AccountID{
+		ShardNum: int64(id.Shard),
+		RealmNum: int64(id.Realm),
+	}
+	if id.AliasKey == nil {
+		resultID.Account = &services.AccountID_AccountNum{
+			AccountNum: int64(id.Account),
+		}
+
+		return resultID
+	}
+
+	data, _ := protobuf.Marshal(id.AliasKey._ToProtoKey())
+	resultID.Account = &services.AccountID_Alias{
+		Alias: data,
+	}
+
+	return resultID
+}
+
 // UnmarshalJSON implements the encoding.JSON interface.
 func (id *AccountID) UnmarshalJSON(data []byte) error {
 	accountID, err := AccountIDFromString(strings.Replace(string(data), "\"", "", 2))

@@ -22,6 +22,7 @@ package hedera
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"os"
 	"time"
@@ -192,6 +193,7 @@ func _Execute( // nolint
 			resp, err = method.transaction(ctx, protoRequest.(*services.Transaction))
 		}
 
+		fmt.Printf("###################: %v\n", resp)
 		if cancel != nil {
 			cancel()
 		}
