@@ -182,6 +182,30 @@ func (id TransactionID) _ToProtobuf() *services.TransactionID {
 	}
 }
 
+func (id TransactionID) ToProtobuf() *services.TransactionID {
+	var validStart *services.Timestamp
+	if id.ValidStart != nil {
+		validStart = _TimeToProtobuf(*id.ValidStart)
+	}
+
+	var accountID *services.AccountID
+	if id.AccountID != nil {
+		accountID = id.AccountID._ToProtobuf()
+	}
+
+	var nonce int32
+	if id.Nonce != nil {
+		nonce = *id.Nonce
+	}
+
+	return &services.TransactionID{
+		TransactionValidStart: validStart,
+		AccountID:             accountID,
+		Scheduled:             id.scheduled,
+		Nonce:                 nonce,
+	}
+}
+
 func _TransactionIDFromProtobuf(pb *services.TransactionID) TransactionID {
 	if pb == nil {
 		return TransactionID{}
