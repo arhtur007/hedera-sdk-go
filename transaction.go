@@ -506,6 +506,7 @@ func _TransactionFreezeWith(
 
 	for _, nodeAccountID := range transaction.nodeAccountIDs.slice {
 		body.NodeAccountID = nodeAccountID.(AccountID)._ToProtobuf()
+		fmt.Printf("SDK TXBody: %+v\n", body)
 		bodyBytes, err := protobuf.Marshal(body)
 		if err != nil {
 			// This should be unreachable
@@ -844,6 +845,10 @@ func (this *Transaction) SetMaxRetry(count int) *Transaction {
 
 func (this *Transaction) GetTransactionBodyBytes() []byte {
 	return this.signedTransactions._GetCurrent().(*services.SignedTransaction).BodyBytes
+}
+
+func (this *Transaction) GetTransactionBody() services.TransactionBody {
+	return this.GetTransactionBody()
 }
 
 func TransactionSign(transaction interface{}, privateKey PrivateKey) (interface{}, error) { // nolint
