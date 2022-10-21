@@ -847,10 +847,6 @@ func (this *Transaction) GetTransactionBodyBytes() []byte {
 	return this.signedTransactions._GetCurrent().(*services.SignedTransaction).BodyBytes
 }
 
-func (this *Transaction) GetTransactionBody() services.TransactionBody {
-	return this.GetTransactionBody()
-}
-
 func TransactionSign(transaction interface{}, privateKey PrivateKey) (interface{}, error) { // nolint
 	switch i := transaction.(type) {
 	case AccountCreateTransaction:

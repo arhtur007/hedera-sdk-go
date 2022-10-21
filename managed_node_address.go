@@ -105,6 +105,9 @@ func (address *_ManagedNodeAddress) _Equals(comp _ManagedNodeAddress) bool { //n
 
 func (address *_ManagedNodeAddress) _String() string {
 	if address.address != nil {
+		fmt.Println("#############################################################################")
+		fmt.Printf("URI: %s\n", *address.address+":"+strconv.FormatInt(int64(address.port), 10))
+		fmt.Println("#############################################################################")
 		return *address.address + ":" + strconv.FormatInt(int64(address.port), 10)
 	}
 
