@@ -22,6 +22,7 @@ package hedera
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"os"
 	"time"
@@ -189,6 +190,8 @@ func _Execute( // nolint
 		if method.query != nil {
 			resp, err = method.query(ctx, protoRequest.(*services.Query))
 		} else {
+			pq := protoRequest.(*services.Transaction)
+			fmt.Printf("REQUEST TX: %+v\n", pq)
 			resp, err = method.transaction(ctx, protoRequest.(*services.Transaction))
 		}
 
