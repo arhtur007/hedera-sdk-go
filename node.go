@@ -27,6 +27,7 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
+	"fmt"
 	"time"
 
 	"context"
@@ -184,6 +185,9 @@ func (node *_Node) _GetChannel() (*_Channel, error) {
 	cont, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	conn, err = grpc.DialContext(cont, node._ManagedNode.address._String(), security, grpc.WithKeepaliveParams(kacp), grpc.WithBlock())
+	fmt.Println("#############################################################################")
+	fmt.Printf("URI: %s\n", node._ManagedNode.address._String())
+	fmt.Println("#############################################################################")
 	if err != nil {
 		return nil, status.Error(codes.ResourceExhausted, "dial timeout of 10sec exceeded")
 	}
