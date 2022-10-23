@@ -22,6 +22,7 @@ package hedera
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"os"
@@ -191,7 +192,9 @@ func _Execute( // nolint
 			resp, err = method.query(ctx, protoRequest.(*services.Query))
 		} else {
 			pq := protoRequest.(*services.Transaction)
+			pqb, _ := protobuf.Marshal(pq)
 			fmt.Printf("REQUEST TX: %+v\n", pq)
+			fmt.Printf("REQUEST TX HEX: %+v\n", hex.EncodeToString(pqb))
 			resp, err = method.transaction(ctx, protoRequest.(*services.Transaction))
 		}
 
